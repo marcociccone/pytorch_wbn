@@ -125,7 +125,7 @@ template <typename T, typename Op>
 __device__ T weighted_reduce(Op op, const float *weights, int plane, int N, int C, int S) {
   T sum = (T)0;
 
-  for (int batch = 0; batch < N; ++batch) {  
+  for (int batch = 0; batch < N; ++batch) {
     for (int x = threadIdx.x; x < S; x += blockDim.x) {
       //w_sum+=weights[batch];
       sum += op(batch, plane, x)*weights[batch];
@@ -135,7 +135,7 @@ __device__ T weighted_reduce(Op op, const float *weights, int plane, int N, int 
   //printf("S %f \n", sum);
   // sum over NumThreads within a warp
   sum = warpSum(sum);
-  
+
   //printf("NS %f \n", sum);
   // 'transpose', and reduce within warp again
   __shared__ T shared[32];
@@ -191,7 +191,7 @@ __global__ void forward_kernel(const float *x, const float *w, const float *mean
     invStd = 1.f / sqrt(_var + eps);
   }
 
-  
+
   float gamma = weight != 0 ? abs(weight[plane]) + eps : 1.f;
   float beta = bias != 0 ? bias[plane] : 0.f;
   for (int batch = 0; batch < N; ++batch) {
@@ -211,7 +211,7 @@ __global__ void forward_kernel(const float *x, const float *w, const float *mean
 __global__ void edz_eydz_kernel(const float *z, const float *dz, const float *weight, const float *bias,
                                 float *edz, float *eydz, float eps, int N, int C, int S) {
   int plane = blockIdx.x;
-  
+
   float gamma = weight != 0 ? abs(weight[plane]) + eps : 1.f;
   float beta = bias != 0 ? bias[plane] : 0.f;
 
@@ -236,11 +236,11 @@ __global__ void backward_kernel(const float *dz, const float *z, const float *w,
   float gamma = weight != 0 ? abs(weight[plane]) + eps : 1.f;
   float beta = bias != 0 ? bias[plane] : 0.f;
 
-  
+
   if (dx != 0) {
     float _var = var[plane];
     float _mean = mean[plane];
-    
+
     float invStd = 0;
     if (_var != 0.f || eps != 0.f) {
       invStd = 1.f / sqrt(_var + eps);
@@ -262,7 +262,7 @@ __global__ void backward_kernel(const float *dz, const float *z, const float *w,
   }
 
 
-  
+
   if (dweight != 0 || dbias != 0) {
 
     if (dweight != 0) {

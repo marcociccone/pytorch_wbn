@@ -1,6 +1,11 @@
 #ifndef __WBN__
 #define __WBN__
 
+#include <cuda_runtime_api.h>
+#include <torch/serialize/tensor.h>
+#include <torch/extension.h>
+
+
 /*
  * Exported functions
  */

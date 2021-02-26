@@ -2,7 +2,7 @@ import torch.autograd as autograd
 import torch.cuda.comm as comm
 from torch.autograd.function import once_differentiable
 
-import _ext
+import wbn_cuda
 
 # Activation names
 ACT_LEAKY_RELU = "leaky_relu"
@@ -61,7 +61,7 @@ class WBN(autograd.Function):
             mean = x.new().resize_as_(running_mean)
             var = x.new().resize_as_(running_var)
             _check_contiguous(x, w, mean, var)
-            _check(_ext.wbn_mean_var_cuda, x, w, mean, var)
+            _check(wbn_cuda.wbn_mean_var_cuda, x, w, mean, var)
 
             # Update running stats
             running_mean.mul_((1 - ctx.momentum)).add_(ctx.momentum * mean)
@@ -71,7 +71,7 @@ class WBN(autograd.Function):
             mean, var = running_mean, running_var
 
         _check_contiguous(x, w, mean, var, weight, bias)
-        _check(_ext.wbn_forward_cuda,
+        _check(wbn_cuda.wbn_forward_cuda,
                x, w, mean, var,
                weight if weight is not None else x.new(),
                bias if bias is not None else x.new(),
@@ -92,9 +92,9 @@ class WBN(autograd.Function):
             dx = dz.new().resize_as_(dz).zero_()
         else:
             dx = None
-        #if ctx.needs_input_grad[1]:
+        # if ctx.needs_input_grad[1]:
         dw = dz.new().resize_as_(w).zero_()
-        #else:
+        # else:
         #    dw = None
 
         if ctx.needs_input_grad[2]:
@@ -111,28 +111,31 @@ class WBN(autograd.Function):
             edz = dz.new().resize_as_(mean)
             eydz = dz.new().resize_as_(mean)
             _check_contiguous(z, dz, w, weight, bias, edz, eydz)
-            _check(_ext.wbn_edz_eydz_cuda,
-                   z, dz,
-                   weight if weight is not None else dz.new(),
-                   bias if bias is not None else dz.new(),
-                   edz, eydz, ctx.eps)
+            _check(wbn_cuda.wbn_edz_eydz_cuda,
+                z, dz,
+                weight if weight is not None else dz.new(),
+                bias if bias is not None else dz.new(),
+                edz, eydz, ctx.eps)
         else:
             # TODO: implement CUDA backward for inference mode
             edz = dz.new().resize_as_(mean).zero_()
             eydz = dz.new().resize_as_(mean).zero_()
-        _check_contiguous(dz, z, w, mean, var, weight, bias, edz, eydz, dx, dw, dweight, dbias)
-        _check(_ext.wbn_backward_cuda,
-               dz, z, w, mean, var,
-               weight if weight is not None else dz.new(),
-               bias if bias is not None else dz.new(),
-               edz, eydz,
-               dx if dx is not None else dz.new(),
-	       dw if dw is not None else dz.new(),
-               dweight if dweight is not None else dz.new(),
-               dbias if dbias is not None else dz.new(),
-               ctx.eps)
-        #del ctx.var
-	#del ctx.mean
+        _check_contiguous(dz, z, w, mean, var,
+                          weight, bias, edz, eydz, dx, dw,
+                          dweight, dbias)
+        _check(
+            wbn_cuda.wbn_backward_cuda,
+            dz, z, w, mean, var,
+            weight if weight is not None else dz.new(),
+            bias if bias is not None else dz.new(),
+            edz, eydz,
+            dx if dx is not None else dz.new(),
+            dw if dw is not None else dz.new(),
+            dweight if dweight is not None else dz.new(),
+            dbias if dbias is not None else dz.new(),
+            ctx.eps)
+        # del ctx.var
+        # del ctx.mean
 
         return dx, dw, dweight, dbias, None, None, None, None, None, None, None
 

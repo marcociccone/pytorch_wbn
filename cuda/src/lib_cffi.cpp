@@ -1,6 +1,7 @@
 // All functions assume that input and output tensors are already initialized
 // and have the correct dimensions
 #include <THC/THC.h>
+#include <torch/extension.h>
 
 // Forward definition of implementation functions
 extern "C" {
@@ -29,7 +30,8 @@ void get_sizes(const THCudaTensor *t, int *N, int *C, int *S){
 }
 
 extern "C" int wbn_mean_var_cuda(const THCudaTensor *x, const THCudaTensor *w, THCudaTensor *mean, THCudaTensor *var) {
-  cudaStream_t stream = THCState_getCurrentStream(state);
+  /* cudaStream_t stream = THCState_getCurrentStream(state); */
+  auto stream = at::cuda::getCurrentCUDAStream();
 
   int S, N, C;
   get_sizes(x, &N, &C, &S);
@@ -46,7 +48,8 @@ extern "C" int wbn_mean_var_cuda(const THCudaTensor *x, const THCudaTensor *w, T
 extern "C" int wbn_forward_cuda(const THCudaTensor *x, const THCudaTensor *w, const THCudaTensor *mean, const THCudaTensor *var,
                                const THCudaTensor *weight, const THCudaTensor *bias, THCudaTensor *y, THCudaTensor *z,
                                float eps) {
-  cudaStream_t stream = THCState_getCurrentStream(state);
+  /* cudaStream_t stream = THCState_getCurrentStream(state); */
+  auto stream = at::cuda::getCurrentCUDAStream();
 
   int S, N, C;
   get_sizes(x, &N, &C, &S);
@@ -66,7 +69,8 @@ extern "C" int wbn_forward_cuda(const THCudaTensor *x, const THCudaTensor *w, co
 
 extern "C" int wbn_edz_eydz_cuda(const THCudaTensor *z, const THCudaTensor *dz, const THCudaTensor *weight,
                                 const THCudaTensor *bias, THCudaTensor *edz, THCudaTensor *eydz, float eps) {
-  cudaStream_t stream = THCState_getCurrentStream(state);
+  /* cudaStream_t stream = THCState_getCurrentStream(state); */
+  auto stream = at::cuda::getCurrentCUDAStream();
 
   int S, N, C;
   get_sizes(z, &N, &C, &S);
@@ -86,7 +90,8 @@ extern "C" int wbn_backward_cuda(const THCudaTensor *dz, const THCudaTensor *z, 
                                const THCudaTensor *weight, const THCudaTensor *bias, const THCudaTensor *edz,
                                const THCudaTensor *eydz, THCudaTensor *dx, THCudaTensor *dw, THCudaTensor *dweight,
                                THCudaTensor *dbias, float eps) {
-  cudaStream_t stream = THCState_getCurrentStream(state);
+  /* cudaStream_t stream = THCState_getCurrentStream(state); */
+  auto stream = at::cuda::getCurrentCUDAStream();
 
   int S, N, C;
   get_sizes(dz, &N, &C, &S);

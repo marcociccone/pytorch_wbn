@@ -1,6 +1,8 @@
 #ifndef __COMMON__
 #define __COMMON__
 #include <cuda_runtime_api.h>
+#include <torch/serialize/tensor.h>
+#include <torch/extension.h>
 
 /*
  * General settings
